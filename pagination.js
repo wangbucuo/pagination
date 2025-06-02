@@ -330,11 +330,9 @@ class PicView {
             overlay.appendChild(deleteBtn);
             const picName = document.createElement('div');
             picName.textContent = this.options.dataJson[i].picName;
-            picName.style = `
-                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
-                height: 20px; 
-                width: ${this.options.picWith}px; 
-                font-size: smaller;`
+            picName.className = 'caption';
+            picName.style = `width: ${this.options.picWith}px;`
+            picName.title = this.options.dataJson[i].picName;
             detail.appendChild(pic);
             detail.appendChild(overlay);
             detail.appendChild(picName);
@@ -433,7 +431,6 @@ class PicView {
             text-overflow: ellipsis;
             white-space: nowrap;
             height: 20px;
-            width: 100%;
             font-size: smaller;
         }
         
@@ -449,7 +446,7 @@ class PicView {
             justify-content: flex-end;
         }
         
-        .pic-view-detail:hover .overlay {
+        .pic-view-detail:hover > img + .overlay {
             display: flex;
         }
         
@@ -496,4 +493,4 @@ class PicView {
         }
     `;
     document.head.appendChild(style);
-})();    
+})();
