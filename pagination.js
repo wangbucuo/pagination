@@ -261,6 +261,57 @@ class Pagination {
 }
 
 class PicView {
+    /**
+     * PicView 构造函数
+     * @param {Object} options - 配置选项
+     * @param {string|HTMLElement} options.container - 容器选择器或元素
+     * @param {Array} options.dataJson - 数据数组
+     * @param {number} [options.picWith=290] - 图片宽度
+     * @param {number} [options.picHeight=200] - 图片高度
+     * @param {number} [options.rows=3] - 列数
+     * @param {function} options.onDeleted - 删除回调函数
+     * @param {Array|Object} options.cardStyle - 卡片样式配置
+     * @param {Array|Object} options.cardEvents - 卡片事件配置
+     * 
+     * 示例: 基于索引的样式配置
+     * const picView = new PicView({
+     *     container: '#container',
+     *     dataJson: data,
+     *     cardStyle: {
+     *         index: 0,
+     *         style: {
+     *             border: '2px solid red',
+     *             borderRadius: '5px'
+     *         }
+     *     }
+     * });
+     * 
+     * 示例: 基于匹配函数的样式配置
+     * const picView = new PicView({
+     *     container: '#container',
+     *     dataJson: data,
+     *     cardStyle: {
+     *         match: (data, index) => index % 2 === 0,
+     *         style: {
+     *             backgroundColor: '#f0f0f0'
+     *         }
+     *     }
+     * });
+     * 
+     * 示例: 卡片事件配置
+     * const picView = new PicView({
+     *     container: '#container',
+     *     dataJson: data,
+     *     cardEvents: {
+     *         match: (data, index) => index >= 5,
+     *         events: {
+     *             click: (data, index, event) => {
+     *                 console.log('点击了卡片', data);
+     *             }
+     *         }
+     *     }
+     * });
+     */
     constructor(options) {
         this.options = {
             container: options.container || '',
@@ -268,7 +319,9 @@ class PicView {
             picWith: options.picWith || 290,
             picHeight: options.picHeight || 200,
             columns: options.rows || 3,
-            onDeleted: options.onDeleted || function() {}
+            onDeleted: options.onDeleted || function() {},
+            cardStyle: options.cardStyle || null,
+            cardEvents: options.cardEvents || null
         };
         
         if(!Array.isArray(this.options.dataJson)){
@@ -312,17 +365,29 @@ class PicView {
         picView.style = `display: grid; grid-template-columns: repeat(${this.options.columns}, 1fr); gap: 10px;justify-items: center;`;
         const startPage = (this.pagination.getCurrentPage() - 1) * this.pagination.config.itemsPerPage;
         const endPage = this.pagination.getCurrentPage() * this.pagination.config.itemsPerPage > this.options.dataJson.length ? this.options.dataJson.length : this.pagination.getCurrentPage() * this.pagination.config.itemsPerPage;
+        const hasClickEvent = this._hasCardEvent('click');
         for (let i = startPage; i < endPage; i++) {
             const detail = document.createElement('div');
             detail.className = 'pic-view-detail';
             detail.style = `text-align: left;width: ${this.options.picWith}px;`;
+            
             const pic = document.createElement('img');
             pic.src = this.options.dataJson[i].picUrl;
+            pic.dataset.picUrl = this.options.dataJson[i].picUrl;
             pic.style = `
                 width: ${this.options.picWith}px;
                 height: ${this.options.picHeight}px;`;
             const overlay = document.createElement('div');
             overlay.className = 'overlay';
+            
+            if (hasClickEvent) {
+                const zoomBtn = document.createElement('button');
+                zoomBtn.className = 'pic-view-detail-btn zoom-btn';
+                zoomBtn.textContent = '放大';
+                zoomBtn.dataset.picUrl = this.options.dataJson[i].picUrl;
+                overlay.appendChild(zoomBtn);
+            }
+            
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'pic-view-detail-btn';
             deleteBtn.textContent = '删除';
@@ -336,14 +401,75 @@ class PicView {
             detail.appendChild(pic);
             detail.appendChild(overlay);
             detail.appendChild(picName);
+            
+            this._applyCardStyles(detail, i, this.options.dataJson[i]);
+            this._bindCardEvents(detail, i, this.options.dataJson[i]);
+            
             picView.appendChild(detail);
         }
         fragment.appendChild(picView);
         return fragment;
     }
+
+    _applyCardStyles(cardElement, cardIndex, cardData) {
+        if (!this.options.cardStyle) {
+            return;
+        }
+
+        const styleConfigs = Array.isArray(this.options.cardStyle) ? this.options.cardStyle : [this.options.cardStyle];
+
+        styleConfigs.forEach(config => {
+            if (config.index !== undefined && config.index === cardIndex) {
+                Object.assign(cardElement.style, config.style);
+            } else if (config.match && typeof config.match === 'function' && config.match(cardData, cardIndex)) {
+                Object.assign(cardElement.style, config.style);
+            }
+        });
+    }
+
+    _bindCardEvents(cardElement, cardIndex, cardData) {
+        if (!this.options.cardEvents) {
+            return;
+        }
+
+        const eventConfigs = Array.isArray(this.options.cardEvents) ? this.options.cardEvents : [this.options.cardEvents];
+
+        eventConfigs.forEach(config => {
+            let shouldBind = false;
+
+            if (config.index !== undefined && config.index === cardIndex) {
+                shouldBind = true;
+            } else if (config.match && typeof config.match === 'function' && config.match(cardData, cardIndex)) {
+                shouldBind = true;
+            }
+
+            if (shouldBind && config.events) {
+                Object.keys(config.events).forEach(eventType => {
+                    cardElement.addEventListener(eventType, (e) => {
+                        config.events[eventType](cardData, cardIndex, e);
+                    });
+                });
+            }
+        });
+    }
+
+    _hasCardEvent(eventType) {
+        if (!this.options.cardEvents) {
+            return false;
+        }
+
+        const eventConfigs = Array.isArray(this.options.cardEvents) ? this.options.cardEvents : [this.options.cardEvents];
+
+        return eventConfigs.some(config => {
+            if (config.events && config.events[eventType]) {
+                return true;
+            }
+            return false;
+        });
+    }
     _addEventListeners() {
-        const buttons = this.container.querySelectorAll('.pic-view-detail-btn');
-        buttons.forEach(button => {
+        const deleteButtons = this.container.querySelectorAll('.pic-view-detail-btn:not(.zoom-btn)');
+        deleteButtons.forEach(button => {
             button.addEventListener('click', (e) => {
                 const picName = e.target.dataset.picName;
                 this.options.onDeleted(picName);
@@ -357,20 +483,37 @@ class PicView {
             });
         });
 
-        const pics = this.container.querySelectorAll('.pic-view-detail>img');
-        pics.forEach(pic => {
-            pic.addEventListener('click', (e) => {
-                const overlayFullscreen = document.createElement('div');
-                overlayFullscreen.className = 'overlay-fullscreen';
-                const img = document.createElement('img');
-                img.src = e.target.src;
-                overlayFullscreen.appendChild(img);
-                document.body.appendChild(overlayFullscreen);
-                overlayFullscreen.addEventListener('click', () => {
-                    document.body.removeChild(overlayFullscreen);
+        const zoomButtons = this.container.querySelectorAll('.pic-view-detail-btn.zoom-btn');
+        zoomButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const picUrl = e.target.dataset.picUrl;
+                this._showFullscreenImage(picUrl);
+            });
+        });
+
+        const hasClickEvent = this._hasCardEvent('click');
+        if (!hasClickEvent) {
+            const pics = this.container.querySelectorAll('.pic-view-detail>img');
+            pics.forEach(pic => {
+                pic.addEventListener('click', (e) => {
+                    const picUrl = e.target.dataset.picUrl;
+                    this._showFullscreenImage(picUrl);
                 });
-            })
-        })
+            });
+        }
+    }
+
+    _showFullscreenImage(picUrl) {
+        const overlayFullscreen = document.createElement('div');
+        overlayFullscreen.className = 'overlay-fullscreen';
+        const img = document.createElement('img');
+        img.src = picUrl;
+        overlayFullscreen.appendChild(img);
+        document.body.appendChild(overlayFullscreen);
+        overlayFullscreen.addEventListener('click', () => {
+            document.body.removeChild(overlayFullscreen);
+        });
     }
 }
 
@@ -463,6 +606,15 @@ class PicView {
         
         .pic-view-detail .overlay .pic-view-detail-btn:hover {
             background-color: #ff7875;
+        }
+
+        .pic-view-detail .overlay .pic-view-detail-btn.zoom-btn {
+            background-color: #1890ff;
+            margin-right: 0;
+        }
+
+        .pic-view-detail .overlay .pic-view-detail-btn.zoom-btn:hover {
+            background-color: #40a9ff;
         }
 
         /* 全屏遮盖样式 */
