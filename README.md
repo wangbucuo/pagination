@@ -11,8 +11,9 @@
 - **动态更新** - 支持实时添加/删除数据，自动刷新分页
 
 ### 扩展功能 ✨
+- **卡片ID配置** - 支持在数据对象中配置自定义卡片ID
 - **卡片样式自定义** - 为特定卡片应用自定义 CSS 样式
-- **卡片事件绑定** - 支持为卡片绑定自定义事件处理器
+- **卡片事件绑定** - 支持为卡片绑定单击、双击等自定义事件处理器
 - **灵活匹配** - 支持基于索引或数据匹配函数
 - **向后兼容** - 完全兼容原有 API，现有代码无需修改
 
@@ -75,6 +76,36 @@
 ```html
 <script src="pagination.js"></script>
 ```
+
+## 新功能说明
+
+### 1. 卡片ID配置
+
+支持在数据对象中添加可选的 `id` 字段，为卡片设置自定义标识：
+
+```javascript
+const data = [
+    { picName: '图片1', picUrl: 'image1.jpg', id: 'custom-card-1' },
+    { picName: '图片2', picUrl: 'image2.jpg' }  // 无ID，不设置卡片ID
+];
+```
+
+### 2. 双击事件绑定
+
+支持为卡片绑定双击事件处理器：
+
+```javascript
+cardEvents: {
+    match: (data, index) => index >= 5,
+    events: {
+        dblclick: (data, index, event) => {
+            window.open(data.picUrl, '_blank');
+        }
+    }
+}
+```
+
+**注意**：当配置了自定义 `click` 或 `dblclick` 事件时，原有的默认单击查看大图功能会自动禁用，并在删除按钮左侧显示"放大"按钮。
 
 ### 方式二：ES Module
 

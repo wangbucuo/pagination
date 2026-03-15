@@ -23,6 +23,7 @@ Pagination.js 是一个轻量级的纯 JavaScript 分页库，提供图片卡片
 {
     picName: '图片名称',      // 必需：图片名称
     picUrl: '图片URL',         // 必需：图片地址
+    id: 'custom-card-1',      // 可选：卡片ID，用于标识特定卡片
     // 可以添加自定义字段，用于样式匹配
     category: 'special',       // 可选：自定义数据
     tag: 'featured'            // 可选：自定义数据
@@ -147,7 +148,23 @@ picView.setPagination(pagination);
 
 ## 卡片扩展功能
 
-### 1. 卡片样式自定义（cardStyle）
+### 1. 卡片ID配置
+
+在数据对象中添加可选的 `id` 字段，为卡片设置自定义ID。
+
+```javascript
+const data = [
+    { picName: '图片1', picUrl: 'image1.jpg', id: 'custom-card-1' },
+    { picName: '图片2', picUrl: 'image2.jpg', id: 'custom-card-2' }
+];
+```
+
+**说明：**
+- 如果配置了 `id` 字段且值为有效值，卡片的DOM元素 `id` 属性将设置为该值
+- 如果未配置 `id` 或值为空（null、undefined、空字符串），则不设置 `id` 属性
+- 支持将数字等类型自动转换为字符串
+
+### 2. 卡片样式自定义（cardStyle）
 
 为特定卡片应用自定义 CSS 样式，支持两种匹配方式。
 
@@ -185,7 +202,7 @@ cardStyle: [
 ]
 ```
 
-### 2. 卡片事件绑定（cardEvents）
+### 3. 卡片事件绑定（cardEvents）
 
 为卡片绑定自定义事件处理器。
 
@@ -202,6 +219,12 @@ cardEvents: {
     }
 }
 ```
+
+**重要说明：**
+- 当配置了自定义 `click` 或 `dblclick` 事件时，原有的默认单击查看大图功能会自动禁用
+- 取而代之的是在删除按钮左侧会出现一个"放大"按钮，点击该按钮可以查看大图
+- 这种设计避免了事件冲突，同时保留了查看大图的功能
+- 支持所有标准 DOM 事件类型
 
 ---
 

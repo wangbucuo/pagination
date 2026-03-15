@@ -365,11 +365,15 @@ class PicView {
         picView.style = `display: grid; grid-template-columns: repeat(${this.options.columns}, 1fr); gap: 10px;justify-items: center;`;
         const startPage = (this.pagination.getCurrentPage() - 1) * this.pagination.config.itemsPerPage;
         const endPage = this.pagination.getCurrentPage() * this.pagination.config.itemsPerPage > this.options.dataJson.length ? this.options.dataJson.length : this.pagination.getCurrentPage() * this.pagination.config.itemsPerPage;
-        const hasClickEvent = this._hasCardEvent('click');
+        const hasCustomEvent = this._hasCardEvent('click') || this._hasCardEvent('dblclick');
         for (let i = startPage; i < endPage; i++) {
             const detail = document.createElement('div');
             detail.className = 'pic-view-detail';
             detail.style = `text-align: left;width: ${this.options.picWith}px;`;
+            
+            if (this.options.dataJson[i].id) {
+                detail.id = String(this.options.dataJson[i].id);
+            }
             
             const pic = document.createElement('img');
             pic.src = this.options.dataJson[i].picUrl;
@@ -380,7 +384,7 @@ class PicView {
             const overlay = document.createElement('div');
             overlay.className = 'overlay';
             
-            if (hasClickEvent) {
+            if (hasCustomEvent) {
                 const zoomBtn = document.createElement('button');
                 zoomBtn.className = 'pic-view-detail-btn zoom-btn';
                 zoomBtn.textContent = '放大';
@@ -492,8 +496,8 @@ class PicView {
             });
         });
 
-        const hasClickEvent = this._hasCardEvent('click');
-        if (!hasClickEvent) {
+        const hasCustomEvent = this._hasCardEvent('click') || this._hasCardEvent('dblclick');
+        if (!hasCustomEvent) {
             const pics = this.container.querySelectorAll('.pic-view-detail>img');
             pics.forEach(pic => {
                 pic.addEventListener('click', (e) => {
